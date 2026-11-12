@@ -6,6 +6,10 @@ const list = document.querySelector('[data-testid="incident-list"]');
 const loader = document.querySelector('[data-testid="loader"]');
 const empty = document.querySelector('[data-testid="empty"]');
 const errorBox = document.querySelector('.error');
+const backdrop = document.querySelector('.backdrop');
+const confirmBox = document.querySelector('[data-testid="confirm"]');
+const confirmAck = document.querySelector('[data-testid="confirm-ack"]');
+const confirmCancel = document.querySelector('[data-testid="confirm-cancel"]');
 
 /** Rows by incident id, so a refresh updates rows in place instead of rebuilding them. */
 const rows = new Map();
@@ -33,6 +37,38 @@ function markAcked(row, ackedAt) {
   const slot = row.querySelector('.act');
   slot.replaceChildren(el('span', { 'data-testid': 'acked', class: 'acked', title: `acked ${ackedAt}` }, 'Acked'));
 }
+
+/**
+ * Product decision (after step 1): Ack asks to confirm, and the confirm names the incident id.
+ * The id is fixed when the row's button is clicked, and the dialog is fixed on screen, so a refresh
+ * that moves rows cannot change what gets acked.
+ */
+let pending = null;
+function askConfirm(i, row, button) {
+  pending = { id: i.id, row, button };
+  confirmBox.querySelector('.confirm-id').textContent = i.id;
+  confirmBox.querySelector('.confirm-what').textContent = `${i.severity} · ${i.service} · ${i.region} · ${i.summary}`;
+  confirmAck.textContent = `Ack ${i.id}`;
+  backdrop.hidden = false;
+  confirmCancel.focus();
+}
+function closeConfirm() {
+  backdrop.hidden = true;
+  const p = pending;
+  pending = null;
+  return p;
+}
+confirmAck.addEventListener('click', () => {
+  const p = closeConfirm();
+  if (p) onAck(p.id, p.row, p.button);
+});
+confirmCancel.addEventListener('click', () => {
+  const p = closeConfirm();
+  p?.button.focus();
+});
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && pending) confirmCancel.click();
+});
 
 async function onAck(id, row, button) {
   button.disabled = true;
@@ -62,7 +98,7 @@ function buildRow(i) {
     markAcked(row, acked.get(i.id));
   } else {
     const button = el('button', { type: 'button', 'data-testid': 'ack' }, 'Ack');
-    button.addEventListener('click', () => onAck(i.id, row, button));
+    button.addEventListener('click', () => askConfirm(i, row, button));
     slot.append(button);
   }
   return row;

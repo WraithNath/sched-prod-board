@@ -53,6 +53,7 @@ await check('R1+R4 new incident appears at top without reload; refresh every ~2s
   const state = { calls: 0, acks: [], incidents: [inc('INC-1', '2026-11-12T03:03:00.000Z')] };
   const page = await newPage(state);
   await page.locator('[data-id="INC-1"] [data-testid="ack"]').click();
+  await page.getByTestId('confirm-ack').click();
   await page.locator('[data-id="INC-1"] [data-testid="acked"]').waitFor();
   assert.equal(state.acks[0].id, 'INC-1');
   state.incidents = [inc('INC-2', '2026-11-12T04:00:00.000Z'), ...state.incidents];
@@ -70,6 +71,7 @@ await check('R2 ack sends the latest cursor', async () => {
   const page = await newPage(state);
   await page.waitForTimeout(2500);
   await page.locator('[data-id="INC-1"] [data-testid="ack"]').click();
+  await page.getByTestId('confirm-ack').click();
   await page.locator('[data-testid="acked"]').waitFor();
   assert.equal(state.acks[0].cursor, `c${state.calls}`);
 });
@@ -88,6 +90,38 @@ for (const [tz, locale, want] of [
     assert.equal(await t.getAttribute('datetime'), '2026-11-12T03:03:00.000Z');
   });
 }
+
+await check('Ack asks to confirm, naming the incident id; Cancel sends nothing', async () => {
+  const state = { calls: 0, acks: [], incidents: [inc('INC-2', '2026-11-12T04:00:00.000Z'), inc('INC-1', '2026-11-12T03:03:00.000Z')] };
+  const page = await newPage(state);
+  await page.locator('[data-id="INC-1"] [data-testid="ack"]').click();
+  await page.getByTestId('confirm').waitFor();
+  assert.match(await page.getByTestId('confirm').innerText(), /INC-1(?!\d)/);
+  assert.equal(await page.getByTestId('confirm-ack').innerText(), 'Ack INC-1');
+  assert.equal(state.acks.length, 0, 'no ack before confirm');
+  await page.getByTestId('confirm-cancel').click();
+  assert.equal(await page.getByTestId('confirm').isVisible(), false);
+  await page.waitForTimeout(300);
+  assert.equal(state.acks.length, 0, 'no ack after cancel');
+  assert.equal(await page.locator('[data-id="INC-1"] [data-testid="ack"]').count(), 1);
+  await page.locator('[data-id="INC-1"] [data-testid="ack"]').click();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByTestId('confirm').isVisible(), false);
+  assert.equal(state.acks.length, 0, 'no ack after Escape');
+});
+
+await check('a list move while the confirm is open does not change what gets acked', async () => {
+  const state = { calls: 0, acks: [], incidents: [inc('INC-1', '2026-11-12T03:03:00.000Z')] };
+  const page = await newPage(state);
+  await page.locator('[data-id="INC-1"] [data-testid="ack"]').click();
+  state.incidents = [inc('INC-9', '2026-11-12T05:00:00.000Z'), ...state.incidents];
+  await page.waitForFunction(() => document.querySelector('[data-testid="incident-row"]').dataset.id === 'INC-9');
+  assert.match(await page.getByTestId('confirm').innerText(), /INC-1(?!\d)/);
+  await page.getByTestId('confirm-ack').click();
+  await page.locator('[data-id="INC-1"] [data-testid="acked"]').waitFor();
+  assert.deepEqual(state.acks.map((a) => a.id), ['INC-1']);
+  assert.equal(await page.locator('[data-id="INC-9"] [data-testid="ack"]').count(), 1);
+});
 
 await check('R6 build sha in meta and footer', async () => {
   const page = await newPage({ calls: 0, acks: [], incidents: [] });

@@ -15,3 +15,13 @@ footer { color: #777; font-size: 13px; }
 .row button { font: inherit; padding: 4px 12px; border: 1px solid #1d1d1f; border-radius: 4px; background: #fff; cursor: pointer; }
 .row button:disabled { opacity: .6; cursor: default; }
 .row .acked { color: #1a7f37; font-weight: 600; }
+.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: center; z-index: 10; }
+.backdrop[hidden] { display: none; }
+.confirm { background: #fff; border-radius: 8px; padding: 18px 22px; min-width: 340px; max-width: 90vw; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+.confirm p { margin: 0 0 8px; }
+.confirm #confirm-text { font-size: 18px; }
+.confirm .confirm-id { font-family: ui-monospace, monospace; }
+.confirm .confirm-what { color: #555; }
+.confirm-buttons { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+.confirm button { font: inherit; padding: 6px 14px; border: 1px solid #1d1d1f; border-radius: 4px; background: #fff; cursor: pointer; }
+.confirm button.primary { background: #1d1d1f; color: #fff; }
