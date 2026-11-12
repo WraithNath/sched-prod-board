@@ -9,3 +9,9 @@ h1 { margin: 0; font-size: 22px; }
 .row.sev2 .sev { color: #a15c00; }
 .row time { color: #555; font-variant-numeric: tabular-nums; }
 footer { color: #777; font-size: 13px; }
+.loader, .empty { color: #555; margin: 12px 0; }
+.error { color: #b00020; margin: 8px 0; }
+.row .act { min-width: 64px; text-align: right; }
+.row button { font: inherit; padding: 4px 12px; border: 1px solid #1d1d1f; border-radius: 4px; background: #fff; cursor: pointer; }
+.row button:disabled { opacity: .6; cursor: default; }
+.row .acked { color: #1a7f37; font-weight: 600; }
